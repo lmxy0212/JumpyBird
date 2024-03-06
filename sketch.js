@@ -9,8 +9,8 @@ const JUMP_HEIGHT = 3;
 const GROUND_HEIGHT = 20; 
 const PIPEGAP = 300;
 
-const WIDTH = 1080;
-const HEIGHT = 1080;
+const WIDTH = 1750;
+const HEIGHT = 870;
 
 var SCROLL_SPEED = 1.5;
 var SCORE = 0;
