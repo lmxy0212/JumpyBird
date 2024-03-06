@@ -17,7 +17,7 @@ var SCORE = 0;
 
 
 function setup() {
-  createCanvas(WIDTH, HEIGHT);
+  createCanvas(windowWidth, windowWidth);
   video = createCapture(VIDEO);
   video.size(width, height);
 
@@ -33,6 +33,9 @@ function modelReady() {
   // select('#status').html('Model Loaded');
 }
 
+function windowResized() {
+   resizeCanvas(windowWidth, windowHeight);
+}
 
 // game
 function getRndInteger(min, max) {
