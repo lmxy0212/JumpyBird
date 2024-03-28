@@ -5,7 +5,7 @@ let referencePos = [];
 
 // Game settings
 const GRAVITY = 9;
-const JUMP_HEIGHT = 3;
+const JUMP_HEIGHT = 7;
 const GROUND_HEIGHT = 20;
 const PIPEGAP = 250;
 
@@ -17,12 +17,29 @@ var SCORE = 0;
 let playerName;
 
 let birdImg;
+// let birdJumpImg;
 let gameStart = false; // Tracks if the game has started
 let leaderboardVisible = true; // Start with the leaderboard visible
 
+function setup() {
+  // Create canvas
+  createCanvas(WIDTH, HEIGHT);
+  setupGameUI();
+  video = createCapture(VIDEO);
+  video.size(width, height);
+
+  poseNet = ml5.poseNet(video, modelReady);
+  poseNet.on('pose', function(results) {
+    poses = results;
+  });
+  video.hide();
+  gameStart = false; // This variable controls the game's start state
+  setupLeaderboardUI();
+}
 
 function preload() {
   birdImg = loadImage('Remy.PNG');
+  // birdJumpImg = loadImage('RemyMeow.PNG');
 }
 
 function setupLeaderboardUI() {
@@ -64,60 +81,42 @@ function setupGameUI() {
 
 function showNameEntry() {
   let nameInput = createInput('');
-  // Dynamically center the input field
   nameInput.position((WIDTH / 2) - 100, (HEIGHT / 2) - 20);
-
-  // Style for name input
-  nameInput.style('width', '200px');
-  nameInput.style('padding', '5px');
-  nameInput.style('font-size', '16px');
-  nameInput.style('text-align', 'center');
-  nameInput.style('background-color', 'rgba(255, 255, 255, 0.5)');
-  nameInput.style('border', '2px solid #ffffff');
-  nameInput.style('border-radius', '15px');
-  nameInput.style('outline', 'none');
-  nameInput.style('color', '#ffffff');
-  nameInput.attribute('placeholder', 'Enter your name');
-  nameInput.style('box-shadow', 'none');
+  // Style for name input...
 
   let startButton = createButton('Start Game');
-  // Dynamically center the "Start Game" button below the input field
   startButton.position((WIDTH / 2) - (startButton.width / 2), HEIGHT / 2 + 20);
-
-  // Apply styles to "Start Game" button
-  startButton.style('background-color', '#4CAF50');
-  startButton.style('color', 'white');
-  startButton.style('font-size', '18px');
-  startButton.style('padding', '10px 20px');
-  startButton.style('border', 'none');
-  startButton.style('border-radius', '5px');
-  startButton.style('cursor', 'pointer');
+  // Apply styles to "Start Game" button...
 
   startButton.mousePressed(() => {
-    playerName = nameInput.value();
-    gameStart = true;
+    playerName = nameInput.value(); // Save the player name
     nameInput.remove();
     startButton.remove();
+
+    // Initiate the countdown before starting the game
+    let countdown = 5;
+    gameStart = false; // Ensure game does not start until countdown is finished
+
+    let countdownInterval = setInterval(() => {
+      // Update the countdown display
+      clear(); // Optionally clear the previous frame, depending on your drawing logic
+      background("#44AAAA"); // Ensure this matches your game's background for a consistent look
+      textSize(70);
+      textAlign(CENTER, CENTER);
+      fill(255); // White color for the text
+      text(`${countdown}`, WIDTH / 2, HEIGHT / 2);
+
+      countdown -= 1;
+      if (countdown < 0) {
+        clearInterval(countdownInterval);
+        gameStart = true; // Start the game after countdown
+      }
+    }, 1000);
   });
 }
-
 
   
-function setup() {
-  // Create canvas
-  createCanvas(WIDTH, HEIGHT);
-  setupGameUI();
-  video = createCapture(VIDEO);
-  video.size(width, height);
 
-  poseNet = ml5.poseNet(video, modelReady);
-  poseNet.on('pose', function(results) {
-    poses = results;
-  });
-  video.hide();
-  gameStart = false; // This variable controls the game's start state
-  setupLeaderboardUI();
-}
 
 
 function modelReady() {
@@ -284,7 +283,42 @@ function draw() {
 
     if (poses.length > 0) {
       let pose = poses[0].pose;
+    // Create a pink ellipse for the nose
+    fill(213, 0, 143);
+    let nose = pose['nose'];
+    ellipse(nose.x, nose.y, 20, 20);
+    
+    fill(255, 215, 0);
+    let rightEye = pose['rightEye'];
+    ellipse(rightEye.x, rightEye.y, 20, 20);
+
+    fill(255, 215, 0);
+    let leftEye = pose['leftEye'];
+    ellipse(leftEye.x, leftEye.y, 20, 20);
+    
+    fill(255, 215, 0);
+    let rightWrist = pose['rightWrist'];
+    ellipse(rightWrist.x, rightWrist.y, 20, 20);
+
+    // // fill(255, 215, 0);
+    // let leftWrist = pose['leftWrist'];
+    // ellipse(leftWrist.x, leftWrist.y, 20, 20);
+    
+    const currentTime = millis(); 
+    const posY = pose['rightWrist'].y;
+
+    referencePos.push({ y: posY, timestamp: currentTime });
+
+    referencePos = referencePos.filter(position => currentTime - position.timestamp < 500);
+
+    let sum = 0;
+    referencePos.forEach(position => sum += position.y);
+    const averageNoseY = sum / referencePos.length;
+
+    if (posY < averageNoseY - 10) {
+      bird.flap();
     }
+  }
     // drawLeaderboard(); 
   }else {
     background("#44AAAA");
